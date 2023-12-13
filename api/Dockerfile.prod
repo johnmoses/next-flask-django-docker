@@ -1,0 +1,43 @@
+# pull official base image
+FROM python:3.9-slim
+
+ENV APP_HOME /api
+WORKDIR $APP_HOME
+
+# create the app user
+RUN addgroup --system app && adduser --system --group app
+
+# Removes output stream buffering, allowing for more efficient logging
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# install psycopg2 dependencies
+RUN apt-get update && apt-get install -y \
+    binutils \
+    libproj-dev \
+    git
+
+# Install dependencies
+RUN pip install --upgrade pip
+COPY ./requirements/base.txt .
+COPY ./requirements/prod.txt .
+RUN pip install --no-cache-dir -r prod.txt
+
+# CMD python manage.py runserver 0.0.0.0:8000 --settings=api.settings.prod
+
+# copy entrypoint.sh
+COPY ./entrypoint.prod.sh .
+RUN sed -i 's/\r$//g'  $APP_HOME/entrypoint.prod.sh
+RUN chmod +x  $APP_HOME/entrypoint.prod.sh
+
+# copy project
+COPY . .
+
+# chown all the files to the app user
+RUN chown -R app:app $APP_HOME
+
+# change to the app user
+USER app
+
+# run entrypoint.prod.sh
+ENTRYPOINT ["/api/entrypoint.prod.sh"]
