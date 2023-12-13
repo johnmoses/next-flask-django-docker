@@ -1,1 +1,1 @@
-# Next JS + Flask + Django + Docker
+# Next JS + Flask + Django + Docker App
